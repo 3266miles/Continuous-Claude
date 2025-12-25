@@ -21,6 +21,7 @@ Session continuity, token-efficient MCP execution, and agentic workflows for Cla
 - [Code Quality (qlty)](#code-quality-qlty)
 - [Directory Structure](#directory-structure)
 - [Environment Variables](#environment-variables)
+- [Glossary](#glossary)
 - [Troubleshooting](#troubleshooting)
 - [Acknowledgments](#acknowledgments)
 
@@ -226,6 +227,10 @@ Fresh context + ledger loaded
 ---
 
 ## Quick Start
+
+**Which option?**
+- Just trying it on ONE project? → Start with Option 1
+- Want it on ALL your projects? → Do Option 2 (global), then Option 3 (per-project)
 
 ### Option 1: Use in This Project
 
@@ -1037,6 +1042,19 @@ Services without API keys still work:
 
 License-based (no API key, requires purchase):
 - `repoprompt` - codebase maps (Free tier: basic features; Pro: MCP tools, CodeMaps)
+
+---
+
+## Glossary
+
+| Term | Definition |
+|------|------------|
+| Session | A single Claude Code conversation (from start to /clear or exit) |
+| Ledger | In-session state file (`CONTINUITY_CLAUDE-*.md`) that survives /clear |
+| Handoff | End-of-session document for transferring work to a new session |
+| Outcome | Session result marker: SUCCEEDED, PARTIAL_PLUS, PARTIAL_MINUS, FAILED |
+| Span | Braintrust trace unit - a turn or tool call within a session |
+| Artifact Index | SQLite database indexing handoffs, plans, and ledgers for RAG queries |
 
 ---
 
