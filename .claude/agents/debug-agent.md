@@ -1,7 +1,7 @@
 ---
 name: debug-agent
 description: Investigate issues using codebase exploration, logs, and code search
-model: sonnet
+model: opus
 tools: [Bash, Read, Write, Glob, Grep]
 ---
 

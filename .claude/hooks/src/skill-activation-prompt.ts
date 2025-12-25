@@ -167,7 +167,9 @@ async function main() {
         }
 
         // Check context % from statusLine temp file and add tiered warnings
-        const sessionId = process.env.CLAUDE_SESSION_ID || 'default';
+        // CLAUDE_PPID is passed from shell wrapper (matches status.sh's $PPID)
+        // This ensures we read the same file that StatusLine wrote
+        const sessionId = process.env.CLAUDE_SESSION_ID || process.env.CLAUDE_PPID || 'default';
         const contextFile = `/tmp/claude-context-pct-${sessionId}.txt`;
         if (existsSync(contextFile)) {
             try {

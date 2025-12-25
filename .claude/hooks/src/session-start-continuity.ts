@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 
 interface SessionStartInput {
   type?: 'startup' | 'resume' | 'clear' | 'compact';  // Legacy field
@@ -76,6 +77,46 @@ function getLatestHandoff(handoffDir: string): HandoffSummary | null {
   };
 }
 
+// Artifact Index precedent query removed - redundant with:
+// 1. Learnings now compounded into .claude/rules/ (permanent)
+// 2. Ledger already provides session context
+// 3. Hierarchical --learn uses handoff context at extraction time
+// Kept: unmarked outcomes prompt (drives data quality)
+
+interface UnmarkedHandoff {
+  id: string;
+  session_name: string;
+  task_number: string | null;
+  task_summary: string;
+}
+
+function getUnmarkedHandoffs(): UnmarkedHandoff[] {
+  try {
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const dbPath = path.join(projectDir, '.claude', 'cache', 'context-graph', 'context.db');
+
+    if (!fs.existsSync(dbPath)) {
+      return [];
+    }
+
+    const result = execSync(
+      `sqlite3 "${dbPath}" "SELECT id, session_name, task_number, task_summary FROM handoffs WHERE outcome = 'UNKNOWN' ORDER BY indexed_at DESC LIMIT 5"`,
+      { encoding: 'utf-8', timeout: 3000 }
+    );
+
+    if (!result.trim()) {
+      return [];
+    }
+
+    return result.trim().split('\n').map(line => {
+      const [id, session_name, task_number, task_summary] = line.split('|');
+      return { id, session_name, task_number: task_number || null, task_summary: task_summary || '' };
+    });
+  } catch (error) {
+    return [];
+  }
+}
+
 async function main() {
   const input: SessionStartInput = JSON.parse(await readStdin());
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -139,6 +180,19 @@ async function main() {
       if (sessionType === 'clear' || sessionType === 'compact') {
         additionalContext = `Continuity ledger loaded from ${mostRecent}:\n\n${ledgerContent}`;
 
+        // Check for unmarked handoffs and prompt user to mark outcomes
+        const unmarkedHandoffs = getUnmarkedHandoffs();
+        if (unmarkedHandoffs.length > 0) {
+          additionalContext += `\n\n---\n\n## Unmarked Session Outcomes\n\n`;
+          additionalContext += `The following handoffs have no outcome marked. Consider marking them to improve future session recommendations:\n\n`;
+          for (const h of unmarkedHandoffs) {
+            const taskLabel = h.task_number ? `task-${h.task_number}` : 'handoff';
+            const summaryPreview = h.task_summary ? h.task_summary.substring(0, 60) + '...' : '(no summary)';
+            additionalContext += `- **${h.session_name}/${taskLabel}** (ID: \`${h.id.substring(0, 8)}\`): ${summaryPreview}\n`;
+          }
+          additionalContext += `\nTo mark an outcome:\n\`\`\`bash\nuv run python scripts/context_graph_mark.py --handoff <ID> --outcome SUCCEEDED|PARTIAL_PLUS|PARTIAL_MINUS|FAILED\n\`\`\`\n`;
+        }
+
         // Add handoff context if available
         if (latestHandoff) {
           const handoffPath = path.join(handoffDir, latestHandoff.filename);
@@ -170,6 +224,9 @@ async function main() {
             });
           }
         }
+
+        // Learnings are now extracted via --learn and compounded via /compound-learnings skill
+        // No need to surface raw learnings at SessionStart - they become permanent rules
       }
     }
   } else {

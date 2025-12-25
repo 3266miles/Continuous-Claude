@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawn } from 'child_process';
 
 interface SessionEndInput {
   session_id: string;
@@ -67,6 +68,23 @@ async function main() {
           }
         }
       }
+    }
+
+    // Trigger Braintrust learnings extraction (fire and forget, don't block session end)
+    // Uses LLM-as-judge to extract What Worked/Failed/Decisions/Patterns
+    const learnScript = path.join(projectDir, 'scripts', 'braintrust_analyze.py');
+    const globalScript = path.join(process.env.HOME || '', '.claude', 'scripts', 'braintrust_analyze.py');
+    const scriptPath = fs.existsSync(learnScript) ? learnScript : globalScript;
+
+    if (fs.existsSync(scriptPath)) {
+      // Use spawn with detached mode so process survives hook exit
+      // Pass the ending session's ID explicitly (new session may already be active in Braintrust)
+      const child = spawn('uv', ['run', 'python', scriptPath, '--learn', '--session-id', input.session_id], {
+        cwd: projectDir,
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref(); // Let parent exit without waiting for child
     }
 
     console.log(JSON.stringify({ result: 'continue' }));

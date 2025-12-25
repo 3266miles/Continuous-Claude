@@ -2,6 +2,55 @@
     "version": "1.0",
     "description": "Skill activation triggers for Claude Code. Controls when skills automatically suggest or block actions.",
     "skills": {
+        "compound-learnings": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "Transform session learnings into permanent capabilities (skills, rules, agents)",
+            "promptTriggers": {
+                "keywords": [
+                    "compound learnings",
+                    "improve setup",
+                    "learn from sessions",
+                    "what patterns",
+                    "turn learnings into",
+                    "make permanent",
+                    "extract patterns",
+                    "create skill from",
+                    "create rule from"
+                ],
+                "intentPatterns": [
+                    "(compound|consolidate|extract).*?learning",
+                    "(improve|enhance|upgrade).*?(setup|config)",
+                    "(what|which).*?pattern.*?(skill|rule|permanent)",
+                    "learn.*?from.*?session",
+                    "(turn|convert|transform).*?learning.*?(skill|rule|agent)"
+                ]
+            }
+        },
+        "debug-hooks": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Systematic hook debugging workflow for Claude Code hooks",
+            "promptTriggers": {
+                "keywords": [
+                    "hook not firing",
+                    "hook not working",
+                    "debug hook",
+                    "SessionEnd not",
+                    "PostToolUse not",
+                    "hook doesn't run",
+                    "why didn't hook"
+                ],
+                "intentPatterns": [
+                    "hook.*(not|isn't|doesn't|didn't).*(fire|work|run|trigger)",
+                    "debug.*hook",
+                    "(SessionEnd|PostToolUse|UserPromptSubmit).*(not|fail|broken)",
+                    "why.*(hook|SessionEnd|PostToolUse)"
+                ]
+            }
+        },
                 "implement_plan": {
             "type": "domain",
             "enforcement": "suggest",
@@ -436,6 +485,38 @@
                     "(code|complexity).*?metrics",
                     "(find|detect).*?(smells|issues|problems)",
                     "format.*?(code|files)"
+                ]
+            }
+        },
+        "braintrust-analyze": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Analyze Claude Code sessions via Braintrust - session replay, agent stats, loop detection",
+            "promptTriggers": {
+                "keywords": [
+                    "braintrust",
+                    "analyze session",
+                    "session analysis",
+                    "session review",
+                    "what agents",
+                    "what skills",
+                    "agent stats",
+                    "skill stats",
+                    "detect loops",
+                    "token usage",
+                    "session replay",
+                    "last session",
+                    "weekly summary"
+                ],
+                "intentPatterns": [
+                    "analyze.*(session|braintrust|logs)",
+                    "session.*(analysis|review|summary)",
+                    "(what|which).*(agents?|skills?).*(use|run|activate)",
+                    "(detect|find|check).*(loops|repeated)",
+                    "(show|get|see).*?(last|recent|my).*?session",
+                    "(token|usage).*(trends?|stats?|analysis)",
+                    "weekly.*(summary|report|review)"
                 ]
             }
         },

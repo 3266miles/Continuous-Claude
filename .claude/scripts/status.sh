@@ -24,7 +24,9 @@ context_pct=$((total_tokens * 100 / context_size))
 [[ "$context_pct" -gt 100 ]] && context_pct=100
 
 # Write for hooks (per-session to avoid multi-instance conflicts)
-echo "$context_pct" > "/tmp/claude-context-pct-${CLAUDE_SESSION_ID:-default}.txt"
+# Use PPID as unique session ID since CLAUDE_SESSION_ID isn't set by Claude Code
+session_id="${CLAUDE_SESSION_ID:-$PPID}"
+echo "$context_pct" > "/tmp/claude-context-pct-${session_id}.txt"
 
 # Format as K with one decimal
 token_display=$(awk "BEGIN {printf \"%.1fK\", $total_tokens/1000}")

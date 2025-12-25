@@ -7,13 +7,15 @@ Session continuity, token-efficient MCP execution, and agentic workflows for Cla
 ## Table of Contents
 
 - [The Problem](#the-problem) / [The Solution](#the-solution)
-- [Quick Start](#quick-start)
+- [Quick Start](#quick-start) (project or global install)
 - [How to Talk to Claude](#how-to-talk-to-claude)
 - [Skills vs Agents](#skills-vs-agents)
 - [MCP Code Execution](#mcp-code-execution)
 - [Continuity System](#continuity-system)
 - [Hooks System](#hooks-system)
 - [Reasoning History](#reasoning-history)
+- [Braintrust Session Tracing](#braintrust-session-tracing-optional) + [Compound Learnings](#compound-learnings)
+- [Artifact Index](#artifact-index) (handoff search, outcome tracking)
 - [TDD Workflow](#tdd-workflow)
 - [Code Quality (qlty)](#code-quality-qlty)
 - [Directory Structure](#directory-structure)
@@ -60,6 +62,8 @@ Fresh context + ledger loaded
 
 ## Quick Start
 
+### Option 1: Use in This Project
+
 ```bash
 # Clone
 git clone https://github.com/parcadei/claude-continuity-kit.git
@@ -68,19 +72,34 @@ cd claude-continuity-kit
 # Install Python deps
 uv sync
 
-# Configure (add your API keys)
+# Configure (optional - add API keys for extra features)
 cp .env.example .env
-
-# Generate MCP wrappers
-uv run mcp-generate
 
 # Start
 claude
 ```
 
-**Zero-dep hooks** - hooks are pre-bundled, no `npm install` needed.
+**Works immediately** - hooks are pre-bundled, no `npm install` needed.
 
-The continuity system loads automatically via hooks.
+### Option 2: Install Globally (Use in Any Project)
+
+```bash
+# After cloning and syncing
+./install-global.sh
+```
+
+This installs skills, agents, rules, and hooks to `~/.claude/`. Now you can use continuity, handoffs, and all other features from any project.
+
+### What's Optional?
+
+All external services are optional. Without API keys:
+- **Continuity system**: Works (no external deps)
+- **TDD workflow**: Works (no external deps)
+- **Session tracing**: Disabled (needs BRAINTRUST_API_KEY)
+- **Web search**: Disabled (needs PERPLEXITY_API_KEY)
+- **Code search**: Falls back to grep (MORPH_API_KEY speeds it up)
+
+See `.env.example` for the full list of optional services.
 
 ---
 
@@ -465,6 +484,157 @@ This is why `/commit` matters - it's not just git, it's building Claude's memory
 
 ---
 
+## Braintrust Session Tracing (Optional)
+
+Track every session with Braintrust for learning from past work.
+
+### What It Provides
+
+1. **Session traces** - Every turn, tool call, and LLM response logged
+2. **Automatic learnings** - At session end, extracts "What Worked/Failed/Patterns"
+3. **Artifact Index integration** - Handoffs linked to trace IDs for correlation
+
+```
+Session runs → Braintrust logs everything
+    ↓
+SessionEnd → extracts learnings → .claude/cache/learnings/
+    ↓
+Next SessionStart → surfaces relevant learnings
+```
+
+### Enabling Braintrust
+
+1. **Get API key** from [braintrust.dev](https://braintrust.dev)
+
+2. **Add to environment:**
+   ```bash
+   echo 'BRAINTRUST_API_KEY="sk-..."' >> ~/.claude/.env
+   ```
+
+3. **Hooks are pre-configured** - The plugin is bundled in `.claude/plugins/braintrust-tracing/`
+
+### How It Works
+
+| Hook | What It Does |
+|------|--------------|
+| **SessionStart** | Creates root span for the session trace |
+| **UserPromptSubmit** | Creates turn span, reconciles interrupted turns |
+| **PostToolUse** | Logs tool spans with input/output |
+| **Stop** | Finalizes current turn span |
+| **SessionEnd** | Closes session trace, triggers `--learn` |
+
+### The Learning Loop
+
+```
+1. You work → Braintrust traces every interaction
+2. /clear or exit → SessionEnd triggers braintrust_analyze.py --learn
+3. LLM extracts: What Worked, What Failed, Key Decisions, Patterns
+4. Saves to: .claude/cache/learnings/<date>_<session_id>.md
+5. Next session → SessionStart surfaces learnings from last 48h
+```
+
+### Artifact Index + Braintrust
+
+Handoffs are automatically linked to Braintrust traces:
+
+```yaml
+# Handoff frontmatter (auto-injected by PostToolUse hook)
+root_span_id: abc-123-main    # Braintrust trace ID
+turn_span_id: def-456-turn    # Span that created this handoff
+session_id: abc-123-main      # Claude session ID
+```
+
+This enables:
+- **Trace → Handoff** correlation (what work produced this handoff?)
+- **Session family queries** (all handoffs from session X)
+- **RAG-enhanced judging** (Artifact Index precedent for plan validation)
+
+### Disabling Braintrust
+
+Remove or comment out the Braintrust hooks in `.claude/settings.json`:
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      // Comment out the braintrust-tracing hooks
+    ]
+  }
+}
+```
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `braintrust_analyze.py --sessions N` | List recent sessions |
+| `braintrust_analyze.py --replay <id>` | View session trace |
+| `braintrust_analyze.py --learn` | Extract learnings from last session |
+| `braintrust_analyze.py --learn --session-id <id>` | Learn from specific session |
+
+### Compound Learnings
+
+After several sessions, you accumulate learnings in `.claude/cache/learnings/`. Run the `/compound-learnings` skill to transform these into permanent rules:
+
+```
+"compound my learnings"
+→ Analyzes .claude/cache/learnings/*.md
+→ Identifies recurring patterns
+→ Creates new rules in .claude/rules/
+→ Archives processed learnings
+```
+
+This closes the loop: **sessions → learnings → rules → better sessions**.
+
+---
+
+## Artifact Index
+
+A local SQLite database that indexes handoffs and plans for fast search.
+
+### What It Does
+
+- **Indexes handoffs** with full-text search (FTS5)
+- **Tracks session outcomes** (SUCCEEDED, PARTIAL, FAILED)
+- **Links to Braintrust traces** for correlation
+- **Surfaces unmarked handoffs** at session start
+
+### How It Works
+
+```
+1. Create handoff → PostToolUse hook indexes it immediately
+2. Session ends → Prompts you to mark outcome
+3. Next session → SessionStart surfaces unmarked handoffs
+4. Mark outcomes → Improves future session recommendations
+```
+
+### Marking Outcomes
+
+After completing work, mark the outcome:
+
+```bash
+# List unmarked handoffs
+uv run python scripts/context_graph_query.py --unmarked
+
+# Mark an outcome
+uv run python scripts/context_graph_mark.py \
+  --handoff abc123 \
+  --outcome SUCCEEDED
+```
+
+**Outcomes:** SUCCEEDED | PARTIAL_PLUS | PARTIAL_MINUS | FAILED
+
+### Querying the Index
+
+```bash
+# Search handoffs by content
+uv run python scripts/context_graph_query.py --search "authentication bug"
+
+# Get session history
+uv run python scripts/context_graph_query.py --session open-source-release
+```
+
+---
+
 ## TDD Workflow
 
 When you say "implement", "add feature", or "fix bug", TDD activates:
@@ -573,6 +743,7 @@ Services without API keys still work:
 - **[HumanLayer](https://github.com/humanlayer/humanlayer)** - Agent patterns
 
 ### Tools & Services
+- **[Braintrust](https://braintrust.dev)** - LLM evaluation, logging, and session tracing
 - **[qlty](https://github.com/qltysh/qlty)** - Universal code quality CLI (70+ linters)
 - **[ast-grep](https://github.com/ast-grep/ast-grep)** - AST-based code search and refactoring
 - **[Nia](https://trynia.ai)** - Library documentation search

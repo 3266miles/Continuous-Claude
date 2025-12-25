@@ -1,6 +1,7 @@
 // src/session-start-continuity.ts
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
 function getLatestHandoff(handoffDir) {
   if (!fs.existsSync(handoffDir)) return null;
   const handoffFiles = fs.readdirSync(handoffDir).filter((f) => (f.startsWith("task-") || f.startsWith("auto-handoff-")) && f.endsWith(".md")).sort((a, b) => {
@@ -37,6 +38,28 @@ function getLatestHandoff(handoffDir) {
     summary,
     isAutoHandoff
   };
+}
+function getUnmarkedHandoffs() {
+  try {
+    const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+    const dbPath = path.join(projectDir, ".claude", "cache", "context-graph", "context.db");
+    if (!fs.existsSync(dbPath)) {
+      return [];
+    }
+    const result = execSync(
+      `sqlite3 "${dbPath}" "SELECT id, session_name, task_number, task_summary FROM handoffs WHERE outcome = 'UNKNOWN' ORDER BY indexed_at DESC LIMIT 5"`,
+      { encoding: "utf-8", timeout: 3e3 }
+    );
+    if (!result.trim()) {
+      return [];
+    }
+    return result.trim().split("\n").map((line) => {
+      const [id, session_name, task_number, task_summary] = line.split("|");
+      return { id, session_name, task_number: task_number || null, task_summary: task_summary || "" };
+    });
+  } catch (error) {
+    return [];
+  }
 }
 async function main() {
   const input = JSON.parse(await readStdin());
@@ -78,6 +101,31 @@ async function main() {
         additionalContext = `Continuity ledger loaded from ${mostRecent}:
 
 ${ledgerContent}`;
+        const unmarkedHandoffs = getUnmarkedHandoffs();
+        if (unmarkedHandoffs.length > 0) {
+          additionalContext += `
+
+---
+
+## Unmarked Session Outcomes
+
+`;
+          additionalContext += `The following handoffs have no outcome marked. Consider marking them to improve future session recommendations:
+
+`;
+          for (const h of unmarkedHandoffs) {
+            const taskLabel = h.task_number ? `task-${h.task_number}` : "handoff";
+            const summaryPreview = h.task_summary ? h.task_summary.substring(0, 60) + "..." : "(no summary)";
+            additionalContext += `- **${h.session_name}/${taskLabel}** (ID: \`${h.id.substring(0, 8)}\`): ${summaryPreview}
+`;
+          }
+          additionalContext += `
+To mark an outcome:
+\`\`\`bash
+uv run python scripts/context_graph_mark.py --handoff <ID> --outcome SUCCEEDED|PARTIAL_PLUS|PARTIAL_MINUS|FAILED
+\`\`\`
+`;
+        }
         if (latestHandoff) {
           const handoffPath = path.join(handoffDir, latestHandoff.filename);
           const handoffContent = fs.readFileSync(handoffPath, "utf-8");
