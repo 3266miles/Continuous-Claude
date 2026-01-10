@@ -416,7 +416,7 @@
             "type": "domain",
             "enforcement": "suggest",
             "priority": "medium",
-            "description": "Search past work (Artifact Index + reasoning files) for decisions and approaches",
+            "description": "Search past work (Nia retros + Artifact Index + reasoning files) for decisions and approaches",
             "promptTriggers": {
                 "keywords": [
                     "recall",
@@ -435,15 +435,43 @@
                     "past work",
                     "similar work",
                     "search handoffs",
-                    "artifact index"
+                    "artifact index",
+                    "retro",
+                    "retros",
+                    "past debugging"
                 ],
                 "intentPatterns": [
-                    "(recall|search|find).*?(reasoning|attempts|decisions|precedent|handoffs)",
+                    "(recall|search|find).*?(reasoning|attempts|decisions|precedent|handoffs|retros)",
                     "(what|how).*?(tried|done|worked|failed).*?before",
-                    "(similar|past).*?(problem|issue|approach|work|session)",
+                    "(similar|past).*?(problem|issue|approach|work|session|debugging)",
                     "(previous|past|last).*?(attempts|work|reasoning|time)",
                     "what did we do.*?(with|for|last)",
-                    "(find|search).*?(past|previous).*?(work|sessions)"
+                    "(find|search).*?(past|previous).*?(work|sessions|retros)"
+                ]
+            }
+        },
+        "retro": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Capture debugging learnings - creates retro doc, inline comments, PR comment, updates CLAUDE.md",
+            "promptTriggers": {
+                "keywords": [
+                    "retro",
+                    "retrospective",
+                    "capture learnings",
+                    "document learnings",
+                    "debugging retro",
+                    "what we learned",
+                    "before merge",
+                    "capture this fix",
+                    "document this fix"
+                ],
+                "intentPatterns": [
+                    "(capture|document|write).*?(learnings|retro|retrospective)",
+                    "(debugging|fix).*?(retro|retrospective|learnings)",
+                    "(before|ready to).*?merge.*?(capture|document)",
+                    "what.*?learned.*?(from|during|debugging)"
                 ]
             }
         },
@@ -588,6 +616,28 @@
                     "(understand|learn).*?(this|project|codebase)",
                     "(just|recently).*?(cloned|started|joined)",
                     "(set up|initialize).*?(continuity|project)"
+                ]
+            }
+        },
+        "prd-validate": {
+            "type": "process",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Run 3-phase PRD validation before implementation to catch scope gaps",
+            "promptTriggers": {
+                "keywords": [
+                    "validate prd",
+                    "check scope",
+                    "before implementing",
+                    "scope validation",
+                    "prd check",
+                    "validate spec",
+                    "check requirements"
+                ],
+                "intentPatterns": [
+                    "(validate|check).*?(prd|scope|spec|requirements)",
+                    "before.*?(implement|build|code)",
+                    "(scope|prd).*?(complete|ready|valid)"
                 ]
             }
         },
