@@ -1,5 +1,7 @@
 ---
 description: Debug issues by investigating logs, database state, and git history
+skills: [debug-hooks]
+context: fork
 ---
 
 # Debug

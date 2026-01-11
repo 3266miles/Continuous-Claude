@@ -1,5 +1,6 @@
 ---
 description: Validation agent that validates plan tech choices against current best practices
+skills: [exa-search]
 ---
 
 > **Note:** The current year is 2025. When validating tech choices, check against 2024-2025 best practices.

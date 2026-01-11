@@ -1,5 +1,6 @@
 ---
 description: Generate comprehensive PR descriptions following repository templates
+context: fork
 ---
 
 # Generate PR Description

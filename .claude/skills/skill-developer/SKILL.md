@@ -33,6 +33,20 @@ Skills live in `.claude/skills/<skill-name>/`:
 name: skill-name
 description: Brief description (shown in skill list)
 allowed-tools: [Bash, Read, Write]  # Optional: restrict tools
+allowed-tools: [Bash(npm *), Read]  # Wildcards supported (2.1.0+)
+
+# NEW in 2.1.0:
+skills: [skill-1, skill-2]          # Skills inherited when spawned as subagent
+context: fork                       # Run in isolated context (prevents pollution)
+hooks:
+  PreToolUse: |
+    # Shell commands before tool use
+    echo "Tool: $TOOL_NAME"
+  PostToolUse: |
+    # Shell commands after tool use
+    # Exit 2 to block with error
+  Stop: |
+    # Shell commands when skill completes
 ---
 
 # Skill Name
@@ -45,6 +59,36 @@ allowed-tools: [Bash, Read, Write]  # Optional: restrict tools
 
 ## Examples
 [Usage examples]
+```
+
+### New 2.1.0 Features
+
+**`skills:` - Skill Inheritance**
+When a skill spawns subagents (Task tool), the listed skills are automatically available to those subagents.
+```yaml
+skills: [test-driven-development, morph-apply]
+```
+
+**`context: fork` - Isolated Context**
+Skill runs in a forked context. Use for skills that produce large output or shouldn't pollute main context.
+```yaml
+context: fork
+```
+
+**`hooks:` - Skill-Level Hooks**
+Shell commands that run at specific hook events. Same events as global hooks but scoped to this skill.
+```yaml
+hooks:
+  PostToolUse: |
+    if [[ "$TOOL_NAME" == "Bash" ]]; then
+      echo "Ran bash command"
+    fi
+```
+
+**Wildcard Permissions**
+Use patterns in allowed-tools for more specific control:
+```yaml
+allowed-tools: [Bash(npm *), Bash(git *), Read]  # Only npm and git commands
 ```
 
 ## Creating an MCP Pipeline Skill

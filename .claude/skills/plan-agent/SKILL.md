@@ -1,5 +1,6 @@
 ---
 description: Planning agent that creates implementation plans and handoffs from conversation context
+skills: [research-agent, exa-search, nia-docs]
 ---
 
 > **Note:** The current year is 2025. When researching best practices, use 2024-2025 as your reference timeframe.

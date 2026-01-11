@@ -1,6 +1,8 @@
 ---
 description: Document codebase as-is with thoughts directory for historical context
 model: opus
+skills: [exa-search, nia-docs]
+context: fork
 ---
 
 # Research Codebase

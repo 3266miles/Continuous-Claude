@@ -1,5 +1,6 @@
 ---
 description: Analyze repository structure, patterns, conventions, and documentation for understanding a new codebase
+context: fork
 ---
 
 > **Note:** The current year is 2025. Use this when searching for recent documentation and patterns.

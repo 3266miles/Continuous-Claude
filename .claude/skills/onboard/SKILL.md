@@ -1,6 +1,7 @@
 ---
 name: onboard
 description: Analyze brownfield codebase and create initial continuity ledger
+skills: [rp-explorer]
 ---
 
 # Onboard - Project Discovery & Ledger Creation

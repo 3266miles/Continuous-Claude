@@ -1,5 +1,6 @@
 ---
 description: Research agent for external documentation, best practices, and library APIs via MCP tools
+skills: [exa-search, nia-docs]
 ---
 
 > **Note:** The current year is 2025. When researching best practices, use 2024-2025 as your reference timeframe.

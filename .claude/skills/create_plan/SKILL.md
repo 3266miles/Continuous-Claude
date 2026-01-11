@@ -1,6 +1,7 @@
 ---
 description: Create detailed implementation plans through interactive research and iteration
 model: opus
+skills: [research-agent, exa-search]
 ---
 
 # Implementation Plan

@@ -1,5 +1,6 @@
 ---
 description: Implement technical plans from thoughts/shared/plans with verification
+skills: [implement_task, test-driven-development]
 ---
 
 # Implement Plan

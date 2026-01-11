@@ -645,7 +645,84 @@ else:
 6. **Check outputs first** - `ls .claude/cache/` before editing code
 7. **Detached spawn hides errors** - add logging to debug
 
+---
+
+## Hooks in SKILL.md Frontmatter (2.1.0+)
+
+As of Claude Code 2.1.0, you can define skill-scoped hooks directly in SKILL.md frontmatter. These hooks only fire when the skill is active.
+
+### Syntax
+
+```yaml
+---
+name: my-skill
+description: Skill with hooks
+hooks:
+  PreToolUse: |
+    # Runs before any tool call in this skill
+    echo "Tool: $TOOL_NAME"
+  PostToolUse: |
+    # Runs after tool completes
+    if [[ "$TOOL_NAME" == "Bash" ]]; then
+      echo "Bash output: $TOOL_OUTPUT"
+    fi
+    # Exit 2 to block with error shown to Claude
+  Stop: |
+    # Runs when skill completes
+    echo "Skill finished"
+---
+```
+
+### Environment Variables
+
+Same as global hooks:
+- `$TOOL_NAME` - Name of tool being called
+- `$TOOL_INPUT` - JSON input to tool
+- `$TOOL_OUTPUT` - Tool output (PostToolUse only)
+- `$CLAUDE_PROJECT_DIR` - Project root
+
+### When to Use Skill Hooks vs Global Hooks
+
+| Use Case | Skill Hooks | Global Hooks |
+|----------|-------------|--------------|
+| Validate this skill's behavior | ✅ | |
+| Apply across all sessions | | ✅ |
+| Skill-specific guardrails | ✅ | |
+| Session-wide enforcement | | ✅ |
+
+### Example: Commit Skill with Attribution Check
+
+```yaml
+---
+name: commit
+description: Create git commits without Claude attribution
+hooks:
+  PostToolUse: |
+    if [[ "$TOOL_NAME" == "Bash" ]]; then
+      if echo "$TOOL_INPUT" | grep -q "git commit"; then
+        if echo "$TOOL_OUTPUT" | grep -qi "co-authored-by.*claude"; then
+          echo "ERROR: Commit contains Claude attribution"
+          exit 2
+        fi
+      fi
+    fi
+---
+```
+
+### Example: Task Completion Verification
+
+```yaml
+---
+name: implement_task
+description: Implementation agent with handoff reminder
+hooks:
+  Stop: |
+    echo "Remember: Create handoff document before returning"
+---
+```
+
 ## See Also
 
 - `/debug-hooks` - Systematic debugging workflow
 - `.claude/rules/hooks.md` - Hook development rules
+- `/skill-developer` - Skill creation including hooks

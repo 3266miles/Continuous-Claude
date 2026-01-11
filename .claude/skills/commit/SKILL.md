@@ -1,5 +1,16 @@
 ---
 description: Create git commits with user approval and no Claude attribution
+context: fork
+hooks:
+  PostToolUse: |
+    if [[ "$TOOL_NAME" == "Bash" ]]; then
+      if echo "$TOOL_INPUT" | grep -q "git commit"; then
+        if echo "$TOOL_OUTPUT" | grep -qi "co-authored-by.*claude"; then
+          echo "ERROR: Commit contains Claude attribution. Remove before committing."
+          exit 2
+        fi
+      fi
+    fi
 ---
 
 # Commit Changes

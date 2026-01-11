@@ -1,5 +1,6 @@
 ---
 description: Token-efficient codebase exploration using RepoPrompt - USE FIRST for brownfield projects
+context: fork
 ---
 
 # RP-Explorer Skill

@@ -1,6 +1,7 @@
 ---
 name: braintrust-analyze
 description: Analyze Claude Code sessions via Braintrust
+context: fork
 ---
 
 # Braintrust Analysis

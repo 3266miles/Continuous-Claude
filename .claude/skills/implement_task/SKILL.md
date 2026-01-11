@@ -1,5 +1,9 @@
 ---
 description: Implementation agent that executes a single task and creates handoff on completion
+skills: [test-driven-development, morph-apply]
+hooks:
+  Stop: |
+    echo "Remember: Create handoff document before returning to orchestrator"
 ---
 
 # Implementation Task Agent
